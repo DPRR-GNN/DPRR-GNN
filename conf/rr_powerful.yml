@@ -1,0 +1,29 @@
+train:
+  execution:
+    seeds: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    alphas: [0.1, 0.2, 0.5]
+    batch_s: 32
+    patience: 30
+    valid_ratio: 0.1
+    test_ratio: 0.15
+    device_num: 1
+    num_epoch: 500
+    minimum_stop_epoch: 100
+  optimizer:
+    lr: 0.01
+    step_size: 50
+    gamma: 0.5
+model:
+  num_layers: 5
+  dropout: 0.5
+  hidden_unit: 64
+  num_mlp_layers: 2 # number of layers for MLP EXCLUDING the input one (default: 2). 1 means linear model.
+  graph_pooling_type: average # Pooling for over nodes in a graph: sum or average
+  neighbor_pooling_type: sum # neighbor_pooling_type
+  learn_eps: False # Whether to learn the epsilon weighting for the center nodes. Does not affect training accuracy though.
+  degree_as_tag: False # let the input node features be the degree of nodes (heuristics for unlabeled graph)
+apply_noise:
+  type: RR
+  epsilon: 1
+val:
+  batch_s: 32
