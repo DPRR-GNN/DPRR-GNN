@@ -60,6 +60,5 @@ $ tensorboard --logdir [log dir]
 For example,
 ```
 $ tensorboard --logdir ./logs/no_noise_seed:0_alpha:0.1
-
 ```
 
