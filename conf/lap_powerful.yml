@@ -1,12 +1,13 @@
+dataset: REDDITBINARY
 train:
   execution:
-    seeds: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-    alphas: [0.1, 0.2, 0.5]
+    seeds: [0,1,2,3,4,5,6,7,8,9]
+    alphas: [0]
     batch_s: 32
     patience: 30
     valid_ratio: 0.1
     test_ratio: 0.15
-    device_num: 1
+    device_num: 0
     num_epoch: 500
     minimum_stop_epoch: 100
   optimizer:
@@ -23,7 +24,7 @@ model:
   learn_eps: False # Whether to learn the epsilon weighting for the center nodes. Does not affect training accuracy though.
   degree_as_tag: False # let the input node features be the degree of nodes (heuristics for unlabeled graph)
 apply_noise:
-  type: lap
-  epsilon: 1
+  type: lap 
+  epsilons: [0.5]
 val:
   batch_s: 32

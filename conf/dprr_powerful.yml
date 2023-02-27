@@ -1,12 +1,13 @@
+dataset: REDDITMULTI5K
 train:
   execution:
-    seeds: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-    alphas: [0.1, 0.2, 0.5]
+    seeds: [0,1,2,3,4,5,6,7,8,9]
+    alphas: [0]
     batch_s: 32
     patience: 30
     valid_ratio: 0.1
     test_ratio: 0.15
-    device_num: 1
+    device_num: 0
     num_epoch: 500
     minimum_stop_epoch: 100
   optimizer:
@@ -24,6 +25,6 @@ model:
   degree_as_tag: False # let the input node features be the degree of nodes (heuristics for unlabeled graph)
 apply_noise:
   type: DPRR
-  epsilon: 1
+  epsilons: [0.2]
 val:
   batch_s: 32

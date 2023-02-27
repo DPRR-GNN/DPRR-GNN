@@ -1,0 +1,20 @@
+version: '3'
+services:
+  dev:
+    build:
+      context: .
+      dockerfile: "Dockerfile_dev"
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=all
+      - JUPYTER_ENABLE_LAB=yes
+    volumes:
+      - type: bind
+        source: "./"
+        target: "/code"
+    ports:
+      - 8888:8888
+      - 6006:6006
+    tty: true
+    command: bash

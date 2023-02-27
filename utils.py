@@ -222,20 +222,12 @@ class HoldPerformanceIndices:
             self.maxnum_epoch = epoch
 
 
-def output_board(hold_performance_indices, log_dir, apply_noise, seed, alpha):
+def output_board(hold_performance_indices, log_dir):
     '''
     Args.
         hold_performanceindices(HoldPerformanceIndices): results
         log_dir(Path): output log file
-        seed(int): Index your favorite int
-        alpha(float): Index your favorite float
     '''
-    log_dir = log_dir / f'{apply_noise}_seed:{seed}_alpha:{alpha}'
-    if os.path.isfile(log_dir):
-        for x in os.listdir(log_dir):
-            remove_file = log_dir / x
-            os.remove(remove_file)
-
     writer = SummaryWriter(log_dir=log_dir)
     output_params = zip(hold_performance_indices.epoch_list,
                         hold_performance_indices.train_acc_list,

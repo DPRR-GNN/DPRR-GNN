@@ -6,6 +6,7 @@ import os
 import random
 from pathlib import Path
 
+from datetime import datetime
 import numpy as np
 import pandas as pd
 import torch
@@ -14,6 +15,7 @@ import torch.optim as optim
 from more_itertools import chunked
 from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import train_test_split
+import torch.nn.functional as F
 # from torch_geometric.seed import seed_everything
 from insert_noise import insert_noise_use_C_use_map
 from models.graphcnn import GraphCNN
@@ -28,7 +30,8 @@ output_headers = ['dataset', 'case', 'seed', 'alpha', 'epsilon',
                   'traindata_loss_training', 'evaldata_loss_training',
                   'accuracy_train', 'accuracy_test',
                   'train_auc', 'test_auc']
-log_dir = Path('./logs')
+#log_dir = Path('./logs')
+output_dir = Path('./output')
 
 
 def train(model, device, train_graphs, optimizer, batch_s):
@@ -92,10 +95,18 @@ def test(model, device, train_graphs, test_graphs, val_graphs):
             pred = output.max(1, keepdim=True)[1]
             labels = torch.LongTensor(
                 [graph.label for graph in graphs]).to(device)
-            score_list = output[:, 1].tolist()
+            # output = torch.exp(output) / \
+            #    torch.sum(torch.exp(output), 1, keepdim=True)
+            output = F.softmax(output, 1)
+            if output.size(1) == 2:
+                output = output[:, 1]
+
+            output = output.tolist()
             correct = pred.eq(labels.view_as(pred)).sum().cpu().item()
             acc = correct / float(len(graphs))
-            roc = roc_auc_score(true_answer_list, score_list)
+            roc = roc_auc_score(
+                true_answer_list, output, multi_class='ovr')
+
         return acc, roc
 
     def pass_data_iteratively(graphs, minibatch_size=64):
@@ -158,25 +169,36 @@ def val(model, device, val_graphs, batch_s):
     return average_loss
 
 
-def main(dataset_name):
+def main():
     parser = argparse.ArgumentParser(
         description='Conf file path')
     parser.add_argument('--conf_file', type=str, help='config file path')
     args = parser.parse_args()
     config = get_params(args.conf_file)
+    dataset_name = config['dataset']
     assert config['train']['execution']['num_epoch'] \
         >= config['train']['execution']['minimum_stop_epoch']
-    epsilon = config['apply_noise'].get('epsilon', 0)
+    # epsilon = config['apply_noise'].get('epsilon', 0)
     output_filename = "GIN_powerful_gnn_" + \
         f"{config['apply_noise']['type']}_" + f"{dataset_name}.csv"
     param_iters = itertools.product(
         config['train']['execution']['seeds'],
-        config['train']['execution']['alphas'])
+        config['train']['execution']['alphas'], config['apply_noise']['epsilons'])
     degree_as_tag = 1 if config['model']['degree_as_tag'] else 0
     graphs, num_classes = load_data(
         dataset_name, config['model']['degree_as_tag'])
     print("dataset read end")
-    for idx, (seed, alpha) in enumerate(param_iters):
+    dt_now = datetime.now()
+    dt_now = dt_now.strftime('%Y%m%d%H%M%S')
+    output_root = output_dir / \
+        f'{config["apply_noise"]["type"]}_{dataset_name}_{dt_now}'
+    output_csv_path = output_root / \
+        f'gnn_{config["apply_noise"]["type"]}_{dataset_name}.csv'
+    for idx, (seed, alpha, epsilon) in enumerate(param_iters):
+        output_model_dir = output_root / \
+            f'seed:{seed}_alpha:{alpha}_epsilon:{epsilon}'
+        os.makedirs(output_model_dir, exist_ok=True)
+
         device = torch.device(
             f"cuda:{config['train']['execution']['device_num']}") \
             if torch.cuda.is_available() else torch.device("cpu")
@@ -239,7 +261,7 @@ def main(dataset_name):
                                test_dataset, val_dataset)
                     final_result = [[dataset_name,
                                      config['apply_noise']['type'], seed,
-                                     alpha, 1,
+                                     alpha, epsilon,
                                      config['train']['execution']['batch_s'],
                                      config['train']['optimizer']['lr'],
                                      config['model']['num_layers'],
@@ -256,16 +278,19 @@ def main(dataset_name):
                     df_final_result = pd.DataFrame(
                         final_result, columns=output_headers)
                     if idx == 0:
-                        df_final_result.to_csv(output_filename, index=False)
+                        df_final_result.to_csv(output_csv_path, index=False)
                     else:
                         df_final_result.to_csv(
-                            output_filename, mode='a', header=False,
+                            output_csv_path, mode='a', header=False,
                             index=False)
 
-                    os.makedirs(log_dir, exist_ok=True)
+                    # os.makedirs(log_dir, exist_ok=True)
+                    log_dir = output_model_dir / 'logs'
                     output_board(hold_performance_indices,
-                                 log_dir, config['apply_noise']['type'],
-                                 seed, alpha)
+                                 log_dir)
+                    ouput_model_path = output_model_dir / 'model_weight.pth'
+                    torch.save(early_stopping.model.state_dict(),
+                               ouput_model_path)
                     break
 
             else:
@@ -278,6 +303,4 @@ def main(dataset_name):
 
 
 if __name__ == '__main__':
-    datasets = ["REDDITBINARY"]
-    for dataset in datasets:
-        main(dataset)
+    main()

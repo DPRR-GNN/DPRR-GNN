@@ -3,6 +3,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 #import sys
+
+from torch_geometric.nn import GCNConv,GATConv,GINConv, global_add_pool, global_mean_pool
 # sys.path.append("models/")
 
 
@@ -148,7 +150,7 @@ class GraphCNN(nn.Module):
         graph_pool = torch.sparse.FloatTensor(
             idx, elem, torch.Size([len(batch_graph), start_idx[-1]]))
 
-        return graph_pool.to(self.device)
+        return graph_pool.to(self.device), idx
 
     def maxpool(self, h, padded_neighbor_list):
         # Element-wise minimum will never affect max-pooling
@@ -209,7 +211,7 @@ class GraphCNN(nn.Module):
     def forward(self, batch_graph):
         X_concat = torch.cat(
             [graph.node_features for graph in batch_graph], 0).to(self.device)
-        graph_pool = self.__preprocess_graphpool(batch_graph)
+        graph_pool, idx = self.__preprocess_graphpool(batch_graph)
 
         if self.neighbor_pooling_type == "max":
             padded_neighbor_list = self.__preprocess_neighbors_maxpool(
@@ -239,8 +241,10 @@ class GraphCNN(nn.Module):
 
         # perform pooling over all nodes in each graph in every layer
         for layer, h in enumerate(hidden_rep):
-            pooled_h = torch.spmm(graph_pool, h)
+            # pooled_h = torch.spmm(graph_pool, h)
+            pooled_h = global_mean_pool(h, idx[0].to(self.device))
             score_over_layer += F.dropout(self.linears_prediction[layer](
                 pooled_h), self.final_dropout, training=self.training)
 
+        
         return score_over_layer

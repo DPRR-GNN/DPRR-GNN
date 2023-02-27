@@ -51,7 +51,7 @@ def insert_noise_use_C_use_map(g_list, alpha, seed, apply_noise,
                                 tp=u_tp, toc_epsilon=epsilon, toc_alpha=alpha,
                                 toc_seed=seed, degree_as_tag=degree_as_tag),
                                 g_list, graph_indices))
-    elif apply_noise == 'DPRR':
+    elif apply_noise == 'DPRR' or apply_noise == 'DPRR-rnd':
         u_lib = np.ctypeslib.load_library(
             "insert_noise_nonprivate_select_rand.so", ".")
         u_lib_DPRR = np.ctypeslib.load_library(
@@ -76,6 +76,18 @@ def insert_noise_use_C_use_map(g_list, alpha, seed, apply_noise,
                                                       toc_alpha=alpha,
                                 toc_seed=seed, degree_as_tag=degree_as_tag),
                                 g_list, graph_indices))
+        if apply_noise == 'DPRR-rnd':
+            for new_dataset in new_dataset_list:
+                degree = len(new_dataset.g.edges)
+                edges = new_dataset.g.edges
+                nodes = new_dataset.g.nodes
+                new_dataset.g.remove_edges_from(edges)
+                new_edges = list(itertools.combinations(nodes, 2))
+                random.shuffle(new_edges)
+                new_edges = new_edges[:degree]
+                new_dataset.g.add_edges_from(new_edges)
+
+        # raise
     return new_dataset_list
 
 

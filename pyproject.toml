@@ -1,0 +1,31 @@
+[tool.poetry]
+name = "gnn_utils"
+version = "0.1.0"
+description = ""
+authors = ["Tomone Hata"]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+setuptools = "*"
+numpy = "*"
+pandas = "*"
+scikit-learn = "*"
+tqdm = "*"
+torchvision = "*"
+torch = "^1.13"
+pyyaml = "*"
+pytorchtools = "*"
+tensorboard = "*"
+networkx = "*"
+more_itertools = "*"
+
+[tool.poetry.dev-dependencies]
+pytest = "^3.4"
+jupyterlab = "*"
+matplotlib = "*"
+ipywidgets = "*"
+nodejs = "*"
+jupyterlab_code_formatter = "*"
+flake8 = "*"
+autopep8 = "*"
+isort = "*"
